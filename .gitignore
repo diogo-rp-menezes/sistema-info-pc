@@ -1,0 +1,4 @@
+# Arquivos ignorados
+system_info.json        # Dados sensíveis (não versionar!)
+*.log                   # Logs
+/target/                # Pasta de builds (Java)
