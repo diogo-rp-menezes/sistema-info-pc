@@ -1,0 +1,72 @@
+{
+  "system_info": {
+    "manual_info": {
+      "patrimonio": "",
+      "additional_equipment": [],
+      "admin_password": "",
+      "anydesk_id": ""
+    },
+    "organization": {
+      "local": "",
+      "coligada": "",
+      "departamento": ""
+    },
+    "motherboard": {
+      "manufacturer": "",
+      "model": "",
+      "serial_number": ""
+    },
+    "memory": [
+      {
+        "SerialNumber": "",
+        "Manufacturer": "",
+        "size_gb": 0,
+        "PartNumber": ""
+      }
+    ],
+    "workstation": {
+      "computer_name": "",
+      "domain": "",
+      "os_version": "",
+      "os_name": ""
+    },
+    "disks": [
+      {
+        "free_percent": 0,
+        "serial": "",
+        "type": "",
+        "model": "",
+        "total_gb": 0,
+        "free_gb": 0
+      }
+    ],
+    "network": [
+      {
+        "DHCPServer": "",
+        "MACAddress": "",
+        "Description": "",
+        "DNSDomainSuffixSearchOrder": [],
+        "IPSubnet": [],
+        "DNSServerSearchOrder": [],
+        "DNSDomain": "",
+        "IPAddress": [],
+        "DefaultIPGateway": []
+      }
+    ],
+    "monitors": [
+      {
+        "serial": "",
+        "manufacturer": "",
+        "name": "",
+        "id": 0,
+        "product": ""
+      }
+    ],
+    "cpu": {
+      "threads": 0,
+      "cores": 0,
+      "architecture": "",
+      "model": ""
+    }
+  }
+}
