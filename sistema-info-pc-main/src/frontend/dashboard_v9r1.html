@@ -69,6 +69,14 @@
             color: white;
             opacity: 0.9;
         }
+        /* Estilo para o modal de autenticação */
+        #authModal .modal-content {
+            border: 2px solid var(--galois-red);
+        }
+        #authModal .modal-header {
+            background-color: var(--galois-red);
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -102,6 +110,33 @@
         </div>
     </div>
 
+    <!-- Modal de Autenticação -->
+    <div class="modal fade" id="authModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-shield-lock"></i> Acesso Confidencial</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Usuário:</label>
+                        <input type="text" class="form-control" id="authUsername" placeholder="usuário@dominio">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Senha:</label>
+                        <input type="password" class="form-control" id="authPassword">
+                    </div>
+                    <div class="alert alert-danger d-none" id="authError"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="authSubmit">
+                        <i class="bi bi-unlock"></i> Acessar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="container-fluid py-4" id="app">
         <div class="d-flex justify-content-between mb-3">
             <div></div>
@@ -112,17 +147,17 @@
 
         <!-- Cabeçalho dinâmico -->
         <div class="system-header">
-			<div class="row align-items-center">
-				<div class="col-md-8">
-					<h1><i class="bi bi-pc-display"></i> Registro de Patrimônio</h1>
-					<h3 id="computer-title">Carregando...</h3>
-					<div class="org-container" id="org-info">
-						<!-- As tags serão adicionadas dinamicamente aqui -->
-					</div>
-				</div>
-				<div class="col-md-4 text-end" id="os-info"></div>
-			</div>
-		</div>
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1><i class="bi bi-pc-display"></i> Registro de Patrimônio</h1>
+                    <h3 id="computer-title">Carregando...</h3>
+                    <div class="org-container" id="org-info">
+                        <!-- As tags serão adicionadas dinamicamente aqui -->
+                    </div>
+                </div>
+                <div class="col-md-4 text-end" id="os-info"></div>
+            </div>
+        </div>
 
         <ul class="nav nav-tabs" id="myTab" role="tablist">
             <li class="nav-item" role="presentation">
@@ -169,7 +204,12 @@
             <div class="tab-pane fade" id="monitors" role="tabpanel"></div>
             <div class="tab-pane fade" id="network" role="tabpanel"></div>
             <div class="tab-pane fade" id="equipment" role="tabpanel"></div>
-            <div class="tab-pane fade" id="manual" role="tabpanel"></div>
+            <div class="tab-pane fade" id="manual" role="tabpanel">
+                <div class="alert alert-info text-center mt-5">
+                    <i class="bi bi-shield-lock me-2"></i>
+                    Autentique-se para visualizar as informações confidenciais
+                </div>
+            </div>
         </div>
     </div>
 
@@ -177,7 +217,10 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const jsonModal = new bootstrap.Modal(document.getElementById('jsonSelectorModal'));
+            const authModal = new bootstrap.Modal('#authModal');
             const loadingOverlay = document.getElementById('loading-overlay');
+            let confidentialAccess = false;
+            let currentSystemData = null;
             
             function showLoading() {
                 loadingOverlay.style.display = 'flex';
@@ -225,7 +268,8 @@
                         return response.json();
                     })
                     .then(data => {
-                        renderDashboard(data.system_info);
+                        currentSystemData = data;
+                        renderDashboard(data);
                         localStorage.setItem('lastLoadedJson', jsonPath);
                     })
                     .catch(error => {
@@ -237,63 +281,95 @@
                     });
             }
             
-            document.getElementById('changeJsonBtn').addEventListener('click', () => {
-                loadJsonList();
-                jsonModal.show();
-            });
-            
-            document.getElementById('loadJsonBtn').addEventListener('click', () => {
-                const selectedJson = document.getElementById('jsonPathSelect').value;
-                if (selectedJson) {
-                    loadSystemInfo(selectedJson);
-                    jsonModal.hide();
-                }
-            });
-            
-            const lastLoaded = localStorage.getItem('lastLoadedJson');
-            if (lastLoaded) {
-                loadSystemInfo(lastLoaded);
-            } else {
-                loadSystemInfo('system_info.json');
-            }
-            
-            function ensureArray(data) {
-                if (Array.isArray(data)) return data;
-                if (data && typeof data === 'object') return [data];
-                return [];
+            function renderConfidentialInfo(data) {
+                if (!data.system_info?.manual_info) return;
+                const manualInfo = data.system_info.manual_info;
+                
+                document.getElementById('manual').innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Estas informações são confidenciais e destinam-se exclusivamente ao uso autorizado pelo departamento de TI.
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card confidential-card">
+                                <div class="card-body">
+                                    <div class="text-center">
+                                        <i class="bi bi-people-fill hardware-icon confidential"></i>
+                                    </div>
+                                    <h5 class="card-title text-center">Acesso Remoto</h5>
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item"><strong>Anydesk ID:</strong> <span class="serial-number">${manualInfo.anydesk_id || 'N/A'}</span></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card confidential-card">
+                                <div class="card-body">
+                                    <div class="text-center">
+                                        <i class="bi bi-shield-lock hardware-icon confidential"></i>
+                                    </div>
+                                    <h5 class="card-title text-center">Credenciais</h5>
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item"><strong>Senha Admin:</strong> <span class="serial-number">${manualInfo.admin_password || 'N/A'}</span></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card confidential-card">
+                                <div class="card-body">
+                                    <div class="text-center">
+                                        <i class="bi bi-tag-fill hardware-icon confidential"></i>
+                                    </div>
+                                    <h5 class="card-title text-center">Patrimônio</h5>
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item"><strong>Número:</strong> <span class="serial-number">${manualInfo.patrimonio || 'N/A'}</span></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
             }
 
             function renderDashboard(data) {
-                // Extrai informações organizacionais
-                const orgData = data.organization || {
-                    coligada: 'Não especificado',
-                    departamento: 'Não especificado',
-                    local: 'Não especificado'
-                };
-                
+                // Acessa os dados dentro de system_info
+                const systemInfo = data.system_info || {};
+                const workstation = systemInfo.workstation || {};
+                const motherboard = systemInfo.motherboard || {};
+                const cpu = systemInfo.cpu || {};
+                const disks = systemInfo.disks || [];
+                const memory = systemInfo.memory || [];
+                const monitors = systemInfo.monitors || [];
+                const network = systemInfo.network || [];
+                const organization = systemInfo.organization || {};
+                const manualInfo = systemInfo.manual_info || {};
+
                 // Atualiza cabeçalho com informações organizacionais
                 document.getElementById('org-info').innerHTML = `
                     <div>
                         <div class="org-title"><i class="bi bi-building"></i> Coligada</div>
-                        <span class="org-tag">${orgData.coligada}</span>
+                        <span class="org-tag">${organization.coligada || 'Não especificado'}</span>
                     </div>
                     <div>
                         <div class="org-title"><i class="bi bi-people-fill"></i> Departamento</div>
-                        <span class="org-tag">${orgData.departamento}</span>
+                        <span class="org-tag">${organization.departamento || 'Não especificado'}</span>
                     </div>
                     <div>
                         <div class="org-title"><i class="bi bi-geo-alt"></i> Local</div>
-                        <span class="org-tag">${orgData.local}</span>
+                        <span class="org-tag">${organization.local || 'Não especificado'}</span>
                     </div>
                 `;
                 
                 // Atualiza cabeçalho
                 document.getElementById('computer-title').textContent = 
-                    `${data.workstation.computer_name} | ${data.workstation.domain}`;
+                    `${workstation.computer_name || 'N/A'} | ${workstation.domain || 'N/A'}`;
                 
                 document.getElementById('os-info').innerHTML = `
-                    <span class="badge badge-galois me-1">${data.workstation.os_name}</span>
-                    <span class="badge bg-light text-dark">${data.workstation.os_version}</span>
+                    <span class="badge badge-galois me-1">${workstation.os_name || 'N/A'}</span>
+                    <span class="badge bg-light text-dark">${workstation.os_version || 'N/A'}</span>
                 `;
 
                 // Renderiza Hardware
@@ -307,9 +383,9 @@
                                     </div>
                                     <h5 class="card-title text-center">Placa-mãe</h5>
                                     <ul class="list-group list-group-flush">
-                                        <li class="list-group-item"><strong>Fabricante:</strong> ${data.motherboard.manufacturer}</li>
-                                        <li class="list-group-item"><strong>Modelo:</strong> ${data.motherboard.model}</li>
-                                        <li class="list-group-item"><strong>Número de Série:</strong> <span class="serial-number">${data.motherboard.serial_number}</span></li>
+                                        <li class="list-group-item"><strong>Fabricante:</strong> ${motherboard.manufacturer || 'N/A'}</li>
+                                        <li class="list-group-item"><strong>Modelo:</strong> ${motherboard.model || 'N/A'}</li>
+                                        <li class="list-group-item"><strong>Número de Série:</strong> <span class="serial-number">${motherboard.serial_number || 'N/A'}</span></li>
                                     </ul>
                                 </div>
                             </div>
@@ -322,10 +398,10 @@
                                     </div>
                                     <h5 class="card-title text-center">Processador</h5>
                                     <ul class="list-group list-group-flush">
-                                        <li class="list-group-item"><strong>Modelo:</strong> ${data.cpu.model}</li>
-                                        <li class="list-group-item"><strong>Arquitetura:</strong> ${data.cpu.architecture}</li>
-                                        <li class="list-group-item"><strong>Núcleos:</strong> ${data.cpu.cores}</li>
-                                        <li class="list-group-item"><strong>Threads:</strong> ${data.cpu.threads || 'N/A'}</li>
+                                        <li class="list-group-item"><strong>Modelo:</strong> ${cpu.model || 'N/A'}</li>
+                                        <li class="list-group-item"><strong>Arquitetura:</strong> ${cpu.architecture || 'N/A'}</li>
+                                        <li class="list-group-item"><strong>Núcleos:</strong> ${cpu.cores || 'N/A'}</li>
+                                        <li class="list-group-item"><strong>Threads:</strong> ${cpu.threads || 'N/A'}</li>
                                     </ul>
                                 </div>
                             </div>
@@ -335,7 +411,7 @@
 
                 // Renderiza Armazenamento
                 let storageHTML = '<div class="row">';
-                data.disks.forEach(disk => {
+                disks.forEach(disk => {
                     storageHTML += `
                         <div class="col-md-6">
                             <div class="card">
@@ -343,17 +419,17 @@
                                     <div class="text-center">
                                         <i class="bi ${disk.type === 'SSD' ? 'bi-device-ssd' : 'bi-hdd'} hardware-icon"></i>
                                     </div>
-                                    <h5 class="card-title text-center">${disk.model}</h5>
+                                    <h5 class="card-title text-center">${disk.model || 'N/A'}</h5>
                                     <ul class="list-group list-group-flush">
-                                        <li class="list-group-item"><strong>Tipo:</strong> ${disk.type}</li>
-                                        <li class="list-group-item"><strong>Serial:</strong> <span class="serial-number">${disk.serial}</span></li>
-                                        <li class="list-group-item"><strong>Capacidade:</strong> ${disk.total_gb} GB</li>
+                                        <li class="list-group-item"><strong>Tipo:</strong> ${disk.type || 'N/A'}</li>
+                                        <li class="list-group-item"><strong>Serial:</strong> <span class="serial-number">${disk.serial || 'N/A'}</span></li>
+                                        <li class="list-group-item"><strong>Capacidade:</strong> ${disk.total_gb || 'N/A'} GB</li>
                                     </ul>
                                     <div class="mt-3">
-                                        <h6 class="text-center">Espaço Livre: ${disk.free_gb} GB (${disk.free_percent}%)</h6>
+                                        <h6 class="text-center">Espaço Livre: ${disk.free_gb || 'N/A'} GB (${disk.free_percent || 'N/A'}%)</h6>
                                         <div class="progress mt-2">
-                                            <div class="progress-bar" role="progressbar" style="width: ${100 - disk.free_percent}%" 
-                                                aria-valuenow="${100 - disk.free_percent}" aria-valuemin="0" aria-valuemax="100">
+                                            <div class="progress-bar" role="progressbar" style="width: ${100 - (disk.free_percent || 0)}%" 
+                                                aria-valuenow="${100 - (disk.free_percent || 0)}" aria-valuemin="0" aria-valuemax="100">
                                             </div>
                                         </div>
                                     </div>
@@ -364,9 +440,9 @@
                 });
                 document.getElementById('storage').innerHTML = storageHTML + '</div>';
 
-                // Renderiza Memória (modificado)
+                // Renderiza Memória
                 let memoryHTML = '<div class="row">';
-                ensureArray(data.memory).forEach((mem, index) => {
+                ensureArray(memory).forEach((mem, index) => {
                     memoryHTML += `
                         <div class="col-md-6">
                             <div class="card">
@@ -376,7 +452,7 @@
                                     </div>
                                     <h5 class="card-title text-center">Módulo ${index + 1}</h5>
                                     <ul class="list-group list-group-flush">
-                                        <li class="list-group-item"><strong>Tamanho:</strong> ${mem.size_gb} GB</li>
+                                        <li class="list-group-item"><strong>Tamanho:</strong> ${mem.size_gb || 'N/A'} GB</li>
                                         <li class="list-group-item"><strong>Fabricante:</strong> ${mem.Manufacturer || 'Desconhecido'}</li>
                                         ${mem.PartNumber ? `<li class="list-group-item"><strong>Part Number:</strong> ${mem.PartNumber}</li>` : ''}
                                         <li class="list-group-item"><strong>Serial:</strong> <span class="serial-number">${mem.SerialNumber || 'N/A'}</span></li>
@@ -393,7 +469,7 @@
                                 <h5 class="card-title">Resumo de Memória</h5>
                                 <div class="alert alert-primary">
                                     <i class="bi bi-info-circle-fill me-2"></i>
-                                    <strong>Memória Total:</strong> ${data.memory.reduce((sum, m) => sum + m.size_gb, 0)} GB
+                                    <strong>Memória Total:</strong> ${memory.reduce((sum, m) => sum + (m.size_gb || 0), 0)} GB
                                 </div>
                             </div>
                         </div>
@@ -401,9 +477,9 @@
                 `;
                 document.getElementById('memory').innerHTML = memoryHTML + '</div>';
 
-                // Renderiza Monitores (modificado)
+                // Renderiza Monitores
                 let monitorsHTML = '<div class="row">';
-                ensureArray(data.monitors).forEach(monitor => {
+                ensureArray(monitors).forEach(monitor => {
                     monitorsHTML += `
                         <div class="col-md-6">
                             <div class="card">
@@ -411,12 +487,12 @@
                                     <div class="text-center">
                                         <i class="bi bi-display hardware-icon"></i>
                                     </div>
-                                    <h5 class="card-title text-center">Monitor ${monitor.id}</h5>
+                                    <h5 class="card-title text-center">Monitor ${monitor.id || 'N/A'}</h5>
                                     <ul class="list-group list-group-flush">
-                                        <li class="list-group-item"><strong>Fabricante:</strong> ${monitor.manufacturer}</li>
-                                        <li class="list-group-item"><strong>Modelo:</strong> ${monitor.product}</li>
-                                        <li class="list-group-item"><strong>Nome:</strong> ${monitor.name}</li>
-                                        <li class="list-group-item"><strong>Serial:</strong> <span class="serial-number">${monitor.serial}</span></li>
+                                        <li class="list-group-item"><strong>Fabricante:</strong> ${monitor.manufacturer || 'N/A'}</li>
+                                        <li class="list-group-item"><strong>Modelo:</strong> ${monitor.product || 'N/A'}</li>
+                                        <li class="list-group-item"><strong>Nome:</strong> ${monitor.name || 'N/A'}</li>
+                                        <li class="list-group-item"><strong>Serial:</strong> <span class="serial-number">${monitor.serial || 'N/A'}</span></li>
                                     </ul>
                                 </div>
                             </div>
@@ -425,9 +501,9 @@
                 });
                 document.getElementById('monitors').innerHTML = monitorsHTML + '</div>';
 
-                // Renderiza Rede (modificado)
+                // Renderiza Rede
                 let networkHTML = '<div class="row">';
-                ensureArray(data.network).forEach(adapter => {
+                ensureArray(network).forEach(adapter => {
                     networkHTML += `
                         <div class="col-md-6">
                             <div class="card">
@@ -435,13 +511,13 @@
                                     <div class="text-center">
                                         <i class="bi bi-ethernet hardware-icon"></i>
                                     </div>
-                                    <h5 class="card-title text-center">${adapter.Description}</h5>
+                                    <h5 class="card-title text-center">${adapter.Description || 'N/A'}</h5>
                                     <ul class="list-group list-group-flush">
-                                        <li class="list-group-item"><strong>MAC:</strong> <span class="mac-address">${adapter.MACAddress}</span></li>
-                                        <li class="list-group-item"><strong>IP(s):</strong> ${ensureArray(adapter.IPAddress).map(ip => `<span class="network-ip">${ip}</span>`).join(' ')}</li>
-                                        <li class="list-group-item"><strong>Máscara:</strong> ${ensureArray(adapter.IPSubnet).filter(ip => ip && !ip.match(/^\d+$/)).map(ip => `<span class="network-ip">${ip}</span>`).join(' ') || 'N/A'}</li>
-                                        <li class="list-group-item"><strong>Gateway:</strong> ${adapter.DefaultIPGateway ? ensureArray(adapter.DefaultIPGateway).filter(gw => gw).map(gw => `<span class="network-ip">${gw}</span>`).join(' ') : 'N/A'}</li>
-                                        <li class="list-group-item"><strong>DNS:</strong> ${adapter.DNSServerSearchOrder ? ensureArray(adapter.DNSServerSearchOrder).filter(dns => dns).map(dns => `<span class="network-ip">${dns}</span>`).join(' ') : 'N/A'}</li>
+                                        <li class="list-group-item"><strong>MAC:</strong> <span class="mac-address">${adapter.MACAddress || 'N/A'}</span></li>
+                                        <li class="list-group-item"><strong>IP(s):</strong> ${ensureArray(adapter.IPAddress).map(ip => `<span class="network-ip">${ip || 'N/A'}</span>`).join(' ')}</li>
+                                        <li class="list-group-item"><strong>Máscara:</strong> ${ensureArray(adapter.IPSubnet).filter(ip => ip && !ip.match(/^\d+$/)).map(ip => `<span class="network-ip">${ip || 'N/A'}</span>`).join(' ') || 'N/A'}</li>
+                                        <li class="list-group-item"><strong>Gateway:</strong> ${adapter.DefaultIPGateway ? ensureArray(adapter.DefaultIPGateway).filter(gw => gw).map(gw => `<span class="network-ip">${gw || 'N/A'}</span>`).join(' ') : 'N/A'}</li>
+                                        <li class="list-group-item"><strong>DNS:</strong> ${adapter.DNSServerSearchOrder ? ensureArray(adapter.DNSServerSearchOrder).filter(dns => dns).map(dns => `<span class="network-ip">${dns || 'N/A'}</span>`).join(' ') : 'N/A'}</li>
                                     </ul>
                                 </div>
                             </div>
@@ -452,8 +528,8 @@
 
                 // Renderiza Equipamentos Adicionais
                 let equipmentHTML = '<div class="row">';
-                if (data.manual_info.additional_equipment && data.manual_info.additional_equipment.length > 0) {
-                    data.manual_info.additional_equipment.forEach((eq, index) => {
+                if (manualInfo.additional_equipment && manualInfo.additional_equipment.length > 0) {
+                    manualInfo.additional_equipment.forEach((eq, index) => {
                         equipmentHTML += `
                             <div class="col-md-6">
                                 <div class="card">
@@ -461,12 +537,12 @@
                                         <div class="text-center">
                                             <i class="bi ${getEquipmentIcon(eq.type)} hardware-icon"></i>
                                         </div>
-                                        <h5 class="card-title text-center">${eq.name}</h5>
-                                        <span class="badge equipment-badge mb-2">${eq.type}</span>
+                                        <h5 class="card-title text-center">${eq.name || 'N/A'}</h5>
+                                        <span class="badge equipment-badge mb-2">${eq.type || 'N/A'}</span>
                                         <ul class="list-group list-group-flush">
                                             <li class="list-group-item">
                                                 <strong>Patrimônio:</strong> 
-                                                <span class="serial-number">${eq.patrimony}</span>
+                                                <span class="serial-number">${eq.patrimony || 'N/A'}</span>
                                             </li>
                                             ${eq.notes ? `<li class="list-group-item"><strong>Observações:</strong> ${eq.notes}</li>` : ''}
                                         </ul>
@@ -487,56 +563,19 @@
                 }
                 document.getElementById('equipment').innerHTML = equipmentHTML + '</div>';
 
-                // Renderiza Informações Manuais
-                if (data.manual_info) {
-                    document.getElementById('manual').innerHTML = `
-                        <div class="alert alert-warning">
-                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                            Estas informações são confidenciais e destinam-se exclusivamente ao uso autorizado pelo departamento de TI.
-                        </div>
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="card confidential-card">
-                                    <div class="card-body">
-                                        <div class="text-center">
-                                            <i class="bi bi-people-fill hardware-icon confidential"></i>
-                                        </div>
-                                        <h5 class="card-title text-center">Acesso Remoto</h5>
-                                        <ul class="list-group list-group-flush">
-                                            <li class="list-group-item"><strong>Anydesk ID:</strong> <span class="serial-number">${data.manual_info.anydesk_id}</span></li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="card confidential-card">
-                                    <div class="card-body">
-                                        <div class="text-center">
-                                            <i class="bi bi-shield-lock hardware-icon confidential"></i>
-                                        </div>
-                                        <h5 class="card-title text-center">Credenciais</h5>
-                                        <ul class="list-group list-group-flush">
-                                            <li class="list-group-item"><strong>Senha Admin:</strong> <span class="serial-number">${data.manual_info.admin_password}</span></li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="card confidential-card">
-                                    <div class="card-body">
-                                        <div class="text-center">
-                                            <i class="bi bi-tag-fill hardware-icon confidential"></i>
-                                        </div>
-                                        <h5 class="card-title text-center">Patrimônio</h5>
-                                        <ul class="list-group list-group-flush">
-                                            <li class="list-group-item"><strong>Número:</strong> <span class="serial-number">${data.manual_info.patrimonio}</span></li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }
+                // Inicializa aba manual vazia (antes da autenticação)
+                document.getElementById('manual').innerHTML = `
+                    <div class="alert alert-info text-center mt-5">
+                        <i class="bi bi-shield-lock me-2"></i>
+                        Autentique-se para visualizar as informações confidenciais
+                    </div>
+                `;
+            }
+
+            function ensureArray(data) {
+                if (Array.isArray(data)) return data;
+                if (data && typeof data === 'object') return [data];
+                return [];
             }
 
             function getEquipmentIcon(type) {
@@ -552,11 +591,84 @@
                     'ssd': 'bi-device-ssd'
                 };
                 
-                const lowerType = type.toLowerCase();
+                const lowerType = (type || '').toLowerCase();
                 for (const [key, icon] of Object.entries(icons)) {
                     if (lowerType.includes(key)) return icon;
                 }
                 return 'bi-pc';
+            }
+            
+            document.getElementById('changeJsonBtn').addEventListener('click', () => {
+                loadJsonList();
+                jsonModal.show();
+            });
+            
+            document.getElementById('loadJsonBtn').addEventListener('click', () => {
+                const selectedJson = document.getElementById('jsonPathSelect').value;
+                if (selectedJson) {
+                    loadSystemInfo(selectedJson);
+                    jsonModal.hide();
+                }
+            });
+            
+            // Autenticação
+            document.getElementById('manual-tab').addEventListener('click', function(e) {
+                if (!confidentialAccess) {
+                    e.preventDefault();
+                    authModal.show();
+                }
+            });
+
+            document.getElementById('authSubmit').addEventListener('click', async function() {
+                const username = document.getElementById('authUsername').value;
+                const password = document.getElementById('authPassword').value;
+                
+                if (!username || !password) {
+                    showAuthError('Preencha todos os campos');
+                    return;
+                }
+
+                showLoading();
+                try {
+                    const response = await fetch('/auth', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+
+                    if (response.ok) {
+                        confidentialAccess = true;
+                        authModal.hide();
+                        
+                        if (currentSystemData) {
+                            renderConfidentialInfo(currentSystemData);
+                        }
+                        
+                        bootstrap.Tab.getInstance(document.getElementById('manual-tab')).show();
+                    } else {
+                        const errorData = await response.json();
+                        showAuthError(errorData.error || 'Credenciais inválidas');
+                    }
+                } catch (error) {
+                    showAuthError('Erro na conexão com o servidor');
+                    console.error('Auth error:', error);
+                } finally {
+                    hideLoading();
+                }
+            });
+
+            function showAuthError(message) {
+                const errorEl = document.getElementById('authError');
+                errorEl.textContent = message;
+                errorEl.classList.remove('d-none');
+            }
+            
+            // Inicialização
+            const lastLoaded = localStorage.getItem('lastLoadedJson');
+            if (lastLoaded) {
+                loadSystemInfo(lastLoaded);
+            } else {
+                loadSystemInfo('system_info.json');
             }
         });
     </script>
