@@ -1,4 +1,36 @@
-# Arquivos ignorados
-system_info.json        # Dados sensíveis (não versionar!)
-*.log                   # Logs
-/target/                # Pasta de builds (Java)
+### Python ###
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.venv/
+venv/
+
+### IDE ###
+.vscode/
+.idea/
+*.swp
+
+### OS ###
+.DS_Store
+Thumbs.db
+
+### Logs ###
+*.log
+
+### Environment ###
+.env
+*.env
+
+### Dados Sensíveis ###
+/levantamento/**/*.json  # Ignora apenas os JSONs de inventário (contêm senhas/patrimônios)
+
+### Exceções (não ignorar) ###
+!server_v2.py           # Garante que o servidor será versionado
+!dashboard_v9r1.html    # Garante que o frontend será versionado
+!system_info_v1r3.ps1   # Garante que o script de coleta será versionado
+!levantamento/          # Mantém a estrutura de pastas (apenas os arquivos JSON são ignorados)
