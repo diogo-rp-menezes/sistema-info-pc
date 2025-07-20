@@ -10,7 +10,7 @@ Projeto full-stack para gestão de ativos de TI com:
 ## 🛠 Tecnologias
 
 ### Backend
-- Java 17
+- Java 21
 - Spring Boot 3.3
 - Spring Data JPA
 - Spring Security (LDAP + local)
