@@ -1,57 +1,87 @@
-/* TIGestor - Setup Inicial do Projeto */
+# TIGestor - Sistema de Gestão de Ativos de TI
 
-// Linguagens & Frameworks
-- Backend: Java 17 + Spring Boot 3.3
-- Frontend: Vue 3 + Vite + Pinia + Vue Router
-- Banco: MySQL
-- ORM: Spring Data JPA + Flyway
-- Segurança: Spring Security (LDAP + local)
-- API Docs: Swagger/OpenAPI 3
-- Auth: JWT
+## 📌 Visão Geral
+Projeto full-stack para gestão de ativos de TI com:
+- Backend Java/Spring Boot
+- Frontend Vue.js
+- Banco MySQL
+- Dockerizado
 
-// Docker
-- docker-compose com: mysql, backend, frontend
+## 🛠 Tecnologias
 
-// Diretórios GitHub
+### Backend
+- Java 17
+- Spring Boot 3.3
+- Spring Data JPA
+- Spring Security (LDAP + local)
+- JWT Authentication
+- Flyway (migrações)
+- Swagger/OpenAPI 3
+
+### Frontend
+- Vue 3
+- Vite
+- Pinia (gerenciamento de estado)
+- Vue Router
+
+### Infra
+- MySQL
+- Docker Compose
+
+## 📁 Estrutura do Projeto
+
+```
 TIGestor/
-├── backend-springboot/         # Projeto Spring Boot
-├── frontend-vue/              # Projeto Vue
-├── docker/                    # Docker Compose + configs
-├── docs/                      # Diagramas, specs
-└── README.md                  # Instruções
+├── backend-springboot/ # Projeto Spring Boot
+├── frontend-vue/ # Projeto Vue
+├── docker/ # Docker Compose + configs
+├── docs/ # Diagramas, specs
+└── README.md # Este arquivo
+```
 
-// Entidades iniciais
-- User (id, login, nome, papel, senha, status)
-- Machine (id, hostname, ip, dataColeta, jsonRaw, status)
-- AccessLog (id, usuario, data, metodo, sucesso)
-- Asset (id, patrimonio, tipo, localizacao, responsavel, vinculo_com_maquina)
-- ColetaHistorico (id, machine_id, hash_config, timestamp)
+## 🗃 Modelos de Dados Principais
+- **User**: Gestão de usuários e acessos
+- **Machine**: Dados de máquinas monitoradas
+- **AccessLog**: Registros de acesso ao sistema
+- **Asset**: Gestão de ativos físicos
+- **ColetaHistorico**: Histórico de coletas de dados
 
-// Primeiros endpoints
-POST /api/collect
-GET /api/status/ultima-coleta
-GET /api/machines
-GET /api/machines/{id}
-POST /auth/login (JWT)
+## 🌐 Endpoints Iniciais
+| Método | Endpoint                     | Descrição                     |
+|--------|------------------------------|-------------------------------|
+| POST   | `/api/collect`               | Coleta dados das máquinas     |
+| GET    | `/api/status/ultima-coleta`   | Último status de coleta       |
+| GET    | `/api/machines`              | Lista todas máquinas          |
+| GET    | `/api/machines/{id}`         | Detalhes de máquina específica|
+| POST   | `/auth/login`                | Autenticação com JWT          |
 
-// Admin web (futuro)
-- Listagem de máquinas
-- Filtros: por coligada, status, data da última coleta
-- Gráficos: saúde dos equipamentos, setores, comparativo
+## 🚀 Roadmap
+- [x] Estrutura inicial do projeto
+- [ ] Configuração Docker
+- [ ] Implementação endpoints básicos
+- [ ] Painel admin web (Vue)
+  - Listagem de máquinas
+  - Filtros avançados
+  - Gráficos analíticos
+- [ ] Funcionalidades futuras:
+  - IA para análise preditiva
+  - Mapeamento de localização
+  - Alertas automáticos
+  - Exportação de relatórios
 
-// Considerações futuras
-- IA para análises (como sugerido)
-- Controle de ativos não digitais
-- Mapa de localização (Leaflet)
-- Exportação PDF/Excel
-- Alertas automáticos (RAM/disco/etc)
+## 🐳 Docker
+O projeto inclui configuração Docker Compose com serviços para:
+- Banco MySQL
+- Backend Spring Boot
+- Frontend Vue
 
-// Observações
-- RAW armazenado apenas se necessário
-- Normalização entre 2FN/3FN
-- Flexível para evolução com dashboards e auditoria
+## 📊 Considerações de Design
+- Armazenamento RAW apenas quando necessário
+- Normalização de banco entre 2FN/3FN
+- Arquitetura flexível para evolução
+- Preparado para dashboards e auditoria
 
-// Ações imediatas
-- Gerar projeto Spring Boot com estrutura inicial
-- Configurar Flyway e Docker
-- Preparar API `/collect`
+## ⚡ Próximos Passos
+1. Gerar projeto Spring Boot inicial
+2. Configurar Flyway e Docker
+3. Implementar API `/collect`
